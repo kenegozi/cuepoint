@@ -24,3 +24,28 @@ This is an app for band, used to display lyrics and chords on stage.
   - Each song in the set is stored as a ChordPro file in that folder.
   - A main file SETNAME.cuepoint.json should also be stored in that folder, which contains metadata about the set, such as title, description, etc. It also contains the order of the songs in the set.
 - the app should utilize Google Drive API to read the song lyrics from a shared Drive. It should store, or cache, the files in local storage so that it continues to work when offline.
+
+---
+
+## Getting Started
+
+### Development
+```bash
+npm install
+npm run dev
+```
+
+### Production Build
+```bash
+npm run build
+npm run preview
+```
+
+### Google Identity Services & OAuth Setup
+To connect with Google Drive and the Google Folder Picker:
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) and create a project.
+2. Enable **Google Drive API** and **Google Picker API**.
+3. Create an **OAuth 2.0 Client ID (Web Application)** and add your origins (e.g. `http://localhost:5173`).
+4. Create an **API Key** restricted to Google Picker API.
+5. In the CuePoint app, click the **Settings** icon in the top bar to enter your Client ID and API Key, which are safely saved in your browser's local storage.
+
