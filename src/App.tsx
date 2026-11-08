@@ -32,9 +32,20 @@ export function App() {
   const [newSetId, setNewSetId] = useState('');
   const [newSetTitle, setNewSetTitle] = useState('');
 
-  // Pre-seed demo songs into cache if empty
+  // Pre-seed demo songs into cache if empty, or load last active set from localStorage
   useEffect(() => {
-    async function seedDemo() {
+    async function initStorage() {
+      // Check if there is an active set saved in localStorage
+      const lastSetId = localStorage.getItem('cuepoint_active_set_id');
+      if (lastSetId) {
+        const cachedActive = await storageService.getSet(lastSetId);
+        if (cachedActive) {
+          setActiveSet(cachedActive);
+          loadSongAtIndex(0, cachedActive);
+          return;
+        }
+      }
+
       const cached = await storageService.getSet(DEMO_SET.id);
       if (!cached) {
         await storageService.saveSet(DEMO_SET);
@@ -42,8 +53,9 @@ export function App() {
           await storageService.saveSongFile(fn, content);
         }
       }
+      loadSongAtIndex(0, DEMO_SET);
     }
-    seedDemo();
+    initStorage();
   }, []);
 
   // Load song content for active index
@@ -84,21 +96,49 @@ export function App() {
 
   // Listen for sync messages from Controller
   useEffect(() => {
-    const unsubscribe = syncService.subscribe((msg: SyncMessage) => {
-      if (msg.type === 'SELECT_SONG' && typeof msg.songIndex === 'number') {
-        loadSongAtIndex(msg.songIndex);
+    const unsubscribe = syncService.subscribe(async (msg: SyncMessage) => {
+      if (msg.type === 'SYNC_SET' && msg.set) {
+        setActiveSet(msg.set);
+        localStorage.setItem('cuepoint_active_set_id', msg.set.id);
+        if (msg.song) {
+          setActiveSongParsed(msg.song);
+          if (typeof msg.songIndex === 'number') {
+            setActiveSongIndex(msg.songIndex);
+          }
+        } else if (typeof msg.songIndex === 'number') {
+          loadSongAtIndex(msg.songIndex, msg.set);
+        }
+      } else if (msg.type === 'SELECT_SONG') {
+        if (msg.song) {
+          setActiveSongParsed(msg.song);
+          if (typeof msg.songIndex === 'number') {
+            setActiveSongIndex(msg.songIndex);
+          }
+        } else if (typeof msg.songIndex === 'number') {
+          loadSongAtIndex(msg.songIndex);
+        }
       }
     });
     return unsubscribe;
   }, [loadSongAtIndex]);
 
   // Handle song selection by Controller
-  const handleSelectSong = (index: number) => {
-    loadSongAtIndex(index);
+  const handleSelectSong = async (index: number) => {
+    await loadSongAtIndex(index);
+    const songMeta = activeSet.songs[index];
+    let parsed: SongParsed | null = null;
+    if (songMeta) {
+      const raw = await storageService.getSongFile(songMeta.fileName);
+      if (raw) {
+        parsed = parseChordPro(raw, songMeta.fileName.replace(/\.chordpro$/, ''));
+      }
+    }
+
     syncService.broadcast({
       type: 'SELECT_SONG',
       songIndex: index,
       songId: activeSet.songs[index]?.fileName,
+      song: parsed || undefined,
     });
   };
 
@@ -214,9 +254,30 @@ export function App() {
             }
 
             await storageService.saveSet(parsedSet);
+            localStorage.setItem('cuepoint_active_set_id', parsedSet.id);
             setActiveSet(parsedSet);
             setStatusMessage(`Loaded set "${parsedSet.title}" from Google Drive.`);
-            loadSongAtIndex(0, parsedSet);
+
+            // Load first song
+            let firstParsed: SongParsed | null = null;
+            if (parsedSet.songs.length > 0) {
+              const firstSongMeta = parsedSet.songs[0];
+              const rawFirst = await storageService.getSongFile(firstSongMeta.fileName);
+              if (rawFirst) {
+                firstParsed = parseChordPro(rawFirst, firstSongMeta.fileName.replace(/\.chordpro$/, ''));
+              }
+              setActiveSongIndex(0);
+              setActiveSongParsed(firstParsed);
+            }
+
+            // Broadcast newly loaded set and first song to all Viewer windows
+            syncService.broadcast({
+              type: 'SYNC_SET',
+              set: parsedSet,
+              songIndex: 0,
+              song: firstParsed || undefined,
+            });
+
             setTimeout(() => setStatusMessage(''), 3500);
           } else {
             // Zero cuepoint files found -> Prompt user to create new set
@@ -263,11 +324,18 @@ export function App() {
         'application/json'
       );
       await storageService.saveSet(newSet);
+      localStorage.setItem('cuepoint_active_set_id', newSet.id);
       setActiveSet(newSet);
       setActiveSongIndex(-1);
       setActiveSongParsed(null);
       setShowNewSetModal(false);
       setStatusMessage(`Created new set "${newSet.title}".`);
+
+      syncService.broadcast({
+        type: 'SYNC_SET',
+        set: newSet,
+        songIndex: -1,
+      });
       setTimeout(() => setStatusMessage(''), 3500);
     } catch (err: any) {
       setErrorMessage(`Failed to create set file: ${err.message}`);

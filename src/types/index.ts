@@ -40,7 +40,9 @@ export interface ChordLyricPair {
 }
 
 export interface SyncMessage {
-  type: 'SELECT_SONG' | 'DISPLAY_PREFERENCES';
+  type: 'SELECT_SONG' | 'SYNC_SET' | 'DISPLAY_PREFERENCES';
+  set?: SetData;
+  song?: SongParsed;
   songId?: string;
   songIndex?: number;
   fontSize?: number;
