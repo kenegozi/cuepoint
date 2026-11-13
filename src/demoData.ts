@@ -17,6 +17,10 @@ export const DEMO_SET: SetData = {
       fileName: 'let-it-be.chordpro',
       title: 'Let It Be',
     },
+    {
+      fileName: 'ha-perach-be-gani.chordpro',
+      title: 'הפרח בגני',
+    },
   ],
 };
 
@@ -88,6 +92,26 @@ And in my [C]hour of darkness she is [G]standing right in [Am]front of me [F]
 Let it [Am]be, let it [G]be, let it [F]be, let it [C]be
 [C]Whisper words of [G]wisdom, let it [F]be [C]
 {eoc}
+`,
+  'ha-perach-be-gani.chordpro': `{title: הפרח בגני}
+{artist: זוהר ארגוב}
+{key: Dm}
+{tempo: 110}
+{meta: direction rtl}
+
+{soc}
+את ה[Dm]פרח שנב[Gm]ט בגני
+את ה[C]דרך שמאירה את [F]עיני
+[Gm]בלילות עת [Dm]אשכב לבדי
+את [A7]חלום שאינו נ[Dm]גמר
+{eoc}
+
+{sov}
+[Dm]יום ועוד יום חול[Gm]פים ביעף
+[C]ואני שוב נושא [F]עיני אל על
+[Gm]מבקש אותך, [Dm]רוצה בך
+אל [A7]תלכי ממני [Dm]לעולם
+{eov}
 `,
 };
 

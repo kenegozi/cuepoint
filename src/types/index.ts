@@ -1,3 +1,5 @@
+export type TextDirection = 'ltr' | 'rtl' | 'auto';
+
 export interface SetSong {
   fileName: string; // e.g. "hotel-california.chordpro"
   title: string;
@@ -20,6 +22,7 @@ export interface SongParsed {
   capo?: string;
   comment?: string;
   rawText: string;
+  direction?: 'ltr' | 'rtl';
   sections: SongSection[];
 }
 
@@ -47,6 +50,7 @@ export interface SyncMessage {
   songIndex?: number;
   fontSize?: number;
   showChords?: boolean;
+  direction?: 'ltr' | 'rtl';
   timestamp: number;
 }
 

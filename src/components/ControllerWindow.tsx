@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SetData, SetSong, SongParsed } from '../types';
+import { SetData, SetSong, SongParsed, TextDirection } from '../types';
 import { 
   Play, 
   ChevronUp, 
@@ -17,6 +17,7 @@ interface ControllerWindowProps {
   set: SetData;
   activeSongIndex: number;
   activeSongParsed: SongParsed | null;
+  controllerDirection?: TextDirection;
   onSelectSong: (index: number) => void;
   onReorderSongs: (reordered: SetSong[]) => void;
   onAddSong: (songId: string, title: string) => void;
@@ -33,6 +34,7 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
   set,
   activeSongIndex,
   activeSongParsed,
+  controllerDirection = 'ltr',
   onSelectSong,
   onReorderSongs,
   onAddSong,
@@ -44,6 +46,7 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
   statusMessage,
   errorMessage,
 }) => {
+  const isRTL = controllerDirection === 'rtl';
   const [showAddModal, setShowAddModal] = useState(false);
   const [newSongId, setNewSongId] = useState('');
   const [newSongTitle, setNewSongTitle] = useState('');
@@ -87,7 +90,7 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
+    <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
       {/* Top Bar */}
       <header className="bg-zinc-900 border-b border-zinc-800 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -151,8 +154,8 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
 
       {/* Two Column Layout: Setlist Navigation & Song Inspector */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Column: Setlist */}
-        <section className="w-96 border-r border-zinc-800 flex flex-col bg-zinc-950/50">
+        {/* Setlist Column (Left in LTR, Right in RTL) */}
+        <section className={`w-96 ${isRTL ? 'border-l' : 'border-r'} border-zinc-800 flex flex-col bg-zinc-950/50`}>
           <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
             <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400 font-mono">
               SETLIST ({set.songs.length})
@@ -179,7 +182,9 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
                     key={song.fileName}
                     className={`flex items-center justify-between p-3 cursor-pointer group transition-colors ${
                       isActive
-                        ? 'bg-amber-500/10 border-l-4 border-amber-500 text-white'
+                        ? isRTL
+                          ? 'bg-amber-500/10 border-r-4 border-amber-500 text-white'
+                          : 'bg-amber-500/10 border-l-4 border-amber-500 text-white'
                         : 'hover:bg-zinc-900/60 text-zinc-300'
                     }`}
                     onClick={() => onSelectSong(idx)}
@@ -227,14 +232,19 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
           </div>
         </section>
 
-        {/* Right Column: Song Inspector & Metadata */}
+        {/* Song Inspector & Metadata */}
         <section className="flex-1 flex flex-col bg-zinc-900/20 overflow-y-auto p-6">
           {activeSongParsed ? (
             <div className="max-w-3xl space-y-6">
               <div>
-                <span className="text-xs font-mono uppercase tracking-wider text-amber-500 font-bold">
-                  ACTIVE ON STAGE
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono uppercase tracking-wider text-amber-500 font-bold">
+                    ACTIVE ON STAGE
+                  </span>
+                  <span className="bg-zinc-800 text-zinc-400 text-[10px] font-mono px-2 py-0.5 rounded border border-zinc-700">
+                    STAGE DIR: {(activeSongParsed.direction || 'ltr').toUpperCase()}
+                  </span>
+                </div>
                 <h2 className="text-3xl font-black text-white mt-1">{activeSongParsed.title}</h2>
                 {activeSongParsed.artist && (
                   <p className="text-zinc-400 font-medium text-lg">{activeSongParsed.artist}</p>
@@ -272,7 +282,10 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
                   </span>
                   <span>{activeSongParsed.sections.length} sections parsed</span>
                 </div>
-                <pre className="text-xs font-mono text-zinc-400 max-h-96 overflow-y-auto whitespace-pre-wrap leading-relaxed select-text bg-black/40 p-3 rounded border border-zinc-950">
+                <pre
+                  dir={activeSongParsed.direction === 'rtl' ? 'rtl' : 'ltr'}
+                  className="text-xs font-mono text-zinc-400 max-h-96 overflow-y-auto whitespace-pre-wrap leading-relaxed select-text bg-black/40 p-3 rounded border border-zinc-950 text-start"
+                >
                   {activeSongParsed.rawText}
                 </pre>
               </div>
@@ -289,7 +302,7 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
       {/* Add Song Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md shadow-2xl">
+          <div dir={isRTL ? 'rtl' : 'ltr'} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md shadow-2xl">
             <h3 className="text-lg font-bold text-white mb-1">Add New Song to Set</h3>
             <p className="text-xs text-zinc-400 mb-4">
               Enter the song details. A new <code className="text-amber-400">.chordpro</code> file will be created.
@@ -300,7 +313,7 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
                 <label className="text-xs font-mono text-zinc-300 block mb-1">
                   Song ID (Filename prefix)
                 </label>
-                <div className="flex items-center">
+                <div className="flex items-center" dir="ltr">
                   <input
                     type="text"
                     value={newSongId}

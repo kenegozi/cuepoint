@@ -1,7 +1,22 @@
-import { SongParsed, SongSection, SongLine, ChordLyricPair } from '../types';
+import { SongParsed, SongSection, SongLine, ChordLyricPair, TextDirection } from '../types';
+
+/**
+ * Detects whether the given text is primarily Right-to-Left (e.g. Hebrew or Arabic)
+ * by comparing counts of RTL script characters vs Latin script characters.
+ */
+export function detectDirection(text: string): 'ltr' | 'rtl' {
+  const rtlChars = text.match(/[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g);
+  const ltrChars = text.match(/[A-Za-z]/g);
+
+  const rtlCount = rtlChars ? rtlChars.length : 0;
+  const ltrCount = ltrChars ? ltrChars.length : 0;
+
+  return rtlCount > ltrCount ? 'rtl' : 'ltr';
+}
 
 export function parseChordPro(rawText: string, id: string): SongParsed {
   const lines = rawText.split(/\r?\n/);
+  let explicitDirection: TextDirection | undefined;
   
   const parsed: SongParsed = {
     id,
@@ -29,6 +44,20 @@ export function parseChordPro(rawText: string, id: string): SongParsed {
         case 't':
           parsed.title = val;
           break;
+        case 'meta': {
+          // Standard ChordPro {meta: key value} e.g. {meta: direction rtl}
+          const metaMatch = val.match(/^([a-zA-Z0-9_-]+)\s+(.+)$/);
+          if (metaMatch) {
+            const metaKey = metaMatch[1].toLowerCase();
+            const metaVal = metaMatch[2].trim().toLowerCase();
+            if (metaKey === 'direction') {
+              if (metaVal === 'rtl' || metaVal === 'ltr' || metaVal === 'auto') {
+                explicitDirection = metaVal;
+              }
+            }
+          }
+          break;
+        }
         case 'artist':
         case 'a':
           parsed.artist = val;
@@ -115,6 +144,26 @@ export function parseChordPro(rawText: string, id: string): SongParsed {
 
   if (currentSection.lines.length > 0) {
     parsed.sections.push(currentSection);
+  }
+
+  // Resolve direction:
+  // If explicit rtl or ltr, use it.
+  // If auto or omitted, auto-detect from title and lyrics.
+  if (explicitDirection === 'rtl' || explicitDirection === 'ltr') {
+    parsed.direction = explicitDirection;
+  } else {
+    // Collect all lyric text and title
+    let allText = parsed.title || '';
+    for (const section of parsed.sections) {
+      if (section.title) allText += ' ' + section.title;
+      for (const line of section.lines) {
+        if (line.comment) allText += ' ' + line.comment;
+        for (const item of line.items) {
+          if (item.lyric) allText += ' ' + item.lyric;
+        }
+      }
+    }
+    parsed.direction = detectDirection(allText);
   }
 
   return parsed;

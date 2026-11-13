@@ -1,16 +1,25 @@
 import React, { useState } from 'react';
 import { getGoogleConfig, saveGoogleConfig } from '../services/googleDriveService';
-import { X, Check, Key } from 'lucide-react';
+import { TextDirection } from '../types';
+import { X, Check, Key, Layout } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  controllerDirection: TextDirection;
+  onControllerDirectionChange: (dir: TextDirection) => void;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({
+  isOpen,
+  onClose,
+  controllerDirection,
+  onControllerDirectionChange,
+}) => {
   const currentConfig = getGoogleConfig();
   const [clientId, setClientId] = useState(currentConfig.clientId);
   const [apiKey, setApiKey] = useState(currentConfig.apiKey);
+  const [selectedDirection, setSelectedDirection] = useState<TextDirection>(controllerDirection);
   const [saved, setSaved] = useState(false);
 
   if (!isOpen) return null;
@@ -18,6 +27,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     saveGoogleConfig({ clientId: clientId.trim(), apiKey: apiKey.trim() });
+    onControllerDirectionChange(selectedDirection);
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
@@ -31,19 +41,63 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         <div className="flex items-center justify-between mb-4 border-b border-zinc-800 pb-3">
           <div className="flex items-center gap-2">
             <Key className="w-5 h-5 text-amber-500" />
-            <h3 className="text-base font-bold text-white">Google API & OAuth Settings</h3>
+            <h3 className="text-base font-bold text-white">Application Settings</h3>
           </div>
           <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
-          CuePoint uses Google Identity Services and the Google Picker API to access your band set folders directly from your browser.
-        </p>
-
         <form onSubmit={handleSave} className="space-y-4">
-          <div>
+          {/* Controller Layout Direction */}
+          <div className="bg-zinc-950/70 p-3 rounded-lg border border-zinc-800">
+            <div className="flex items-center gap-2 mb-2">
+              <Layout className="w-4 h-4 text-amber-400" />
+              <label className="text-xs font-bold text-white">
+                Controller UI Layout Direction
+              </label>
+            </div>
+            <p className="text-[11px] text-zinc-400 mb-2.5">
+              Sets whether the Controller interface (setlist, navigation, tools) renders in LTR or RTL mode.
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedDirection('ltr')}
+                className={`py-1.5 px-3 rounded text-xs font-semibold border transition ${
+                  selectedDirection === 'ltr'
+                    ? 'bg-amber-500 text-black border-amber-500 font-bold'
+                    : 'bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500'
+                }`}
+              >
+                LTR (Left to Right)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedDirection('rtl')}
+                className={`py-1.5 px-3 rounded text-xs font-semibold border transition ${
+                  selectedDirection === 'rtl'
+                    ? 'bg-amber-500 text-black border-amber-500 font-bold'
+                    : 'bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500'
+                }`}
+              >
+                RTL (Right to Left)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedDirection('auto')}
+                className={`py-1.5 px-3 rounded text-xs font-semibold border transition ${
+                  selectedDirection === 'auto'
+                    ? 'bg-amber-500 text-black border-amber-500 font-bold'
+                    : 'bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500'
+                }`}
+              >
+                Auto (Browser)
+              </button>
+            </div>
+          </div>
+
+          <div className="border-t border-zinc-800 pt-3">
             <label className="text-xs font-mono text-zinc-300 block mb-1">
               Google OAuth 2.0 Web Client ID
             </label>
@@ -94,7 +148,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   <span>Saved!</span>
                 </>
               ) : (
-                <span>Save Credentials</span>
+                <span>Save Settings</span>
               )}
             </button>
           </div>

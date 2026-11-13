@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { SetData, SetSong, SongParsed, SyncMessage } from './types';
+import { SetData, SetSong, SongParsed, SyncMessage, TextDirection } from './types';
 import { ControllerWindow } from './components/ControllerWindow';
 import { ViewerWindow } from './components/ViewerWindow';
 import { SettingsModal } from './components/SettingsModal';
@@ -19,6 +19,26 @@ export function App() {
   const [activeSet, setActiveSet] = useState<SetData>(DEMO_SET);
   const [activeSongIndex, setActiveSongIndex] = useState<number>(0);
   const [activeSongParsed, setActiveSongParsed] = useState<SongParsed | null>(null);
+
+  // Controller UI direction preference (saved in localStorage)
+  const [controllerDirection, setControllerDirection] = useState<TextDirection>(() => {
+    const saved = localStorage.getItem('cuepoint_controller_direction');
+    if (saved === 'rtl' || saved === 'ltr' || saved === 'auto') return saved;
+    return 'ltr';
+  });
+
+  // Effective layout direction for Controller (resolves 'auto' using browser language)
+  const effectiveControllerDir: 'ltr' | 'rtl' =
+    controllerDirection === 'auto'
+      ? /^(he|ar|fa|ur)/i.test(navigator.language)
+        ? 'rtl'
+        : 'ltr'
+      : controllerDirection;
+
+  const handleControllerDirectionChange = (newDir: TextDirection) => {
+    setControllerDirection(newDir);
+    localStorage.setItem('cuepoint_controller_direction', newDir);
+  };
 
   const [folderId, setFolderId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -139,6 +159,7 @@ export function App() {
       songIndex: index,
       songId: activeSet.songs[index]?.fileName,
       song: parsed || undefined,
+      direction: parsed?.direction,
     });
   };
 
@@ -354,6 +375,7 @@ export function App() {
         set={activeSet}
         activeSongIndex={activeSongIndex}
         activeSongParsed={activeSongParsed}
+        controllerDirection={effectiveControllerDir}
         onSelectSong={handleSelectSong}
         onReorderSongs={handleReorderSongs}
         onAddSong={handleAddSong}
@@ -366,7 +388,12 @@ export function App() {
         errorMessage={errorMessage}
       />
 
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        controllerDirection={controllerDirection}
+        onControllerDirectionChange={handleControllerDirectionChange}
+      />
 
       {/* New Set Modal when 0 cuepoint files found in picked folder */}
       {showNewSetModal && (

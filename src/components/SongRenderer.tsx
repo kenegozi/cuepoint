@@ -5,12 +5,25 @@ interface SongRendererProps {
   song: SongParsed;
   fontSize: number; // in pixels
   showChords: boolean;
+  directionOverride?: 'ltr' | 'rtl' | 'auto';
 }
 
-export const SongRenderer: React.FC<SongRendererProps> = ({ song, fontSize, showChords }) => {
+export const SongRenderer: React.FC<SongRendererProps> = ({
+  song,
+  fontSize,
+  showChords,
+  directionOverride = 'auto',
+}) => {
+  const resolvedDirection: 'ltr' | 'rtl' =
+    directionOverride === 'auto'
+      ? song.direction || 'ltr'
+      : directionOverride;
+  const isRTL = resolvedDirection === 'rtl';
+
   return (
     <div
-      className="w-full max-w-5xl mx-auto px-4 py-8 select-text"
+      dir={resolvedDirection}
+      className={`w-full max-w-5xl mx-auto px-4 py-8 select-text ${isRTL ? 'text-right' : 'text-left'}`}
       style={{
         // Define root font size and calculated relatives
         ['--lyrics-font-size' as any]: `${fontSize}px`,
@@ -69,6 +82,12 @@ export const SongRenderer: React.FC<SongRendererProps> = ({ song, fontSize, show
               CAPO: {song.capo}
             </span>
           )}
+          <span
+            className="bg-zinc-900 text-zinc-400 border border-zinc-800 px-2 py-0.5 rounded text-xs font-mono uppercase"
+            style={{ fontSize: 'calc(var(--lyrics-font-size) * 0.55)' }}
+          >
+            {resolvedDirection.toUpperCase()}
+          </span>
         </div>
       </header>
 
@@ -79,9 +98,13 @@ export const SongRenderer: React.FC<SongRendererProps> = ({ song, fontSize, show
             key={sIdx}
             className={`rounded-lg transition-all ${
               section.type === 'chorus'
-                ? 'bg-zinc-900/40 border-l-4 border-amber-500 pl-4 py-2 my-4'
+                ? isRTL
+                  ? 'bg-zinc-900/40 border-r-4 border-amber-500 pr-4 py-2 my-4'
+                  : 'bg-zinc-900/40 border-l-4 border-amber-500 pl-4 py-2 my-4'
                 : section.type === 'bridge'
-                ? 'border-l-4 border-sky-500 pl-4 py-2 my-4'
+                ? isRTL
+                  ? 'border-r-4 border-sky-500 pr-4 py-2 my-4'
+                  : 'border-l-4 border-sky-500 pl-4 py-2 my-4'
                 : ''
             }`}
           >
@@ -109,12 +132,18 @@ export const SongRenderer: React.FC<SongRendererProps> = ({ song, fontSize, show
                 }
 
                 return (
-                  <div key={lIdx} className="flex flex-wrap items-end leading-none py-1">
+                  <div key={lIdx} className="flex flex-wrap items-end leading-none py-1" dir={resolvedDirection}>
                     {line.items.map((item, iIdx) => (
-                      <span key={iIdx} className="inline-flex flex-col items-start whitespace-pre mr-0.5">
+                      <span
+                        key={iIdx}
+                        className={`inline-flex flex-col ${
+                          isRTL ? 'items-start ml-0.5' : 'items-start mr-0.5'
+                        } whitespace-pre`}
+                      >
                         {showChords && (
                           <span
-                            className="font-bold text-amber-400 font-mono h-[1.3em] leading-none select-none"
+                            dir="ltr"
+                            className="font-bold text-amber-400 font-mono h-[1.3em] leading-none select-none text-left"
                             style={{ fontSize: 'calc(var(--lyrics-font-size) * 0.85)' }}
                           >
                             {item.chord || '\u00A0'}
