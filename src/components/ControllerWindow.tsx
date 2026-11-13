@@ -1,20 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SetData, SetSong, SongParsed, TextDirection, StageId, AVAILABLE_STAGES } from '../types';
-import { 
-  Play, 
-  ChevronUp, 
-  ChevronDown, 
-  Plus, 
-  Save, 
-  FolderOpen, 
-  ExternalLink, 
-  Settings, 
+import {
+  Play,
+  ChevronUp,
+  ChevronDown,
+  Plus,
+  Save,
+  FolderOpen,
+  ExternalLink,
+  Settings,
   FileText,
   AlertCircle,
   Edit3,
-  Tv
+  Tv,
+  Printer
 } from 'lucide-react';
 import { SongEditorModal } from './SongEditorModal';
+import { SongPdfRenderer } from './SongPdfRenderer';
 
 interface ControllerWindowProps {
   set: SetData;
@@ -54,6 +56,7 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
   const isRTL = controllerDirection === 'rtl';
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
   const [showStageMenu, setShowStageMenu] = useState(false);
   const stageMenuRef = useRef<HTMLDivElement>(null);
   const [newSongId, setNewSongId] = useState('');
@@ -158,9 +161,8 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
 
             {showStageMenu && (
               <div
-                className={`absolute top-full mt-1.5 w-52 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl py-1 z-50 ${
-                  isRTL ? 'left-0' : 'right-0'
-                }`}
+                className={`absolute top-full mt-1.5 w-52 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl py-1 z-50 ${isRTL ? 'left-0' : 'right-0'
+                  }`}
               >
                 <div className="px-3 py-1.5 text-[11px] font-bold text-zinc-400 uppercase tracking-wider border-b border-zinc-800 flex items-center gap-1.5">
                   <Tv className="w-3.5 h-3.5 text-amber-500" />
@@ -247,13 +249,12 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
                 return (
                   <div
                     key={song.fileName}
-                    className={`flex items-center justify-between p-3 cursor-pointer group transition-colors ${
-                      isActive
+                    className={`flex items-center justify-between p-3 cursor-pointer group transition-colors ${isActive
                         ? isRTL
                           ? 'bg-amber-500/10 border-r-4 border-amber-500 text-white'
                           : 'bg-amber-500/10 border-l-4 border-amber-500 text-white'
                         : 'hover:bg-zinc-900/60 text-zinc-300'
-                    }`}
+                      }`}
                     onClick={() => onSelectSong(idx)}
                   >
                     <div className="flex items-center gap-3 min-w-0">
@@ -347,33 +348,41 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
                     <FileText className="w-3.5 h-3.5 text-zinc-500" />
                     {set.songs[activeSongIndex]?.fileName}
                   </span>
-                  <div className="flex items-center gap-3">
-                    <span>{activeSongParsed.sections.length} sections parsed</span>
-                    <button
-                      onClick={() => setShowEditModal(true)}
-                      className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded font-sans font-semibold text-xs flex items-center gap-1.5 transition"
-                      title="Edit ChordPro file"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      <span>Edit</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <span>{activeSongParsed.sections.length} sections parsed</span>
+                      <button
+                        onClick={() => setShowPdfModal(true)}
+                        className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded font-sans font-semibold text-xs flex items-center gap-1.5 transition"
+                        title="Print or export two-column PDF"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Print PDF</span>
+                      </button>
+                      <button
+                        onClick={() => setShowEditModal(true)}
+                        className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded font-sans font-semibold text-xs flex items-center gap-1.5 transition"
+                        title="Edit ChordPro file"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Edit</span>
+                      </button>
+                    </div>
                   </div>
+                  <pre
+                    dir={activeSongParsed.direction === 'rtl' ? 'rtl' : 'ltr'}
+                    className="text-xs font-mono text-zinc-400 max-h-96 overflow-y-auto whitespace-pre-wrap leading-relaxed select-text bg-black/40 p-3 rounded border border-zinc-950 text-start"
+                  >
+                    {activeSongParsed.rawText}
+                  </pre>
                 </div>
-                <pre
-                  dir={activeSongParsed.direction === 'rtl' ? 'rtl' : 'ltr'}
-                  className="text-xs font-mono text-zinc-400 max-h-96 overflow-y-auto whitespace-pre-wrap leading-relaxed select-text bg-black/40 p-3 rounded border border-zinc-950 text-start"
-                >
-                  {activeSongParsed.rawText}
-                </pre>
               </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-zinc-600">
-              <Play className="w-10 h-10 mb-2 opacity-30" />
-              <p>Select a song from the list to preview metadata and broadcast to stage viewers</p>
-            </div>
+              ) : (
+              <div className="flex flex-col items-center justify-center h-full text-zinc-600">
+                <Play className="w-10 h-10 mb-2 opacity-30" />
+                <p>Select a song from the list to preview metadata and broadcast to stage viewers</p>
+              </div>
           )}
-        </section>
+            </section>
       </div>
 
       {/* Add Song Modal */}
@@ -426,22 +435,20 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
                   <button
                     type="button"
                     onClick={() => setNewSongDirection('ltr')}
-                    className={`py-2 px-3 text-xs font-semibold rounded border transition text-center ${
-                      newSongDirection === 'ltr'
+                    className={`py-2 px-3 text-xs font-semibold rounded border transition text-center ${newSongDirection === 'ltr'
                         ? 'bg-amber-500 text-black border-amber-500'
                         : 'bg-zinc-950 text-zinc-400 border-zinc-700 hover:text-white'
-                    }`}
+                      }`}
                   >
                     Left-to-Right (LTR)
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewSongDirection('rtl')}
-                    className={`py-2 px-3 text-xs font-semibold rounded border transition text-center ${
-                      newSongDirection === 'rtl'
+                    className={`py-2 px-3 text-xs font-semibold rounded border transition text-center ${newSongDirection === 'rtl'
                         ? 'bg-amber-500 text-black border-amber-500'
                         : 'bg-zinc-950 text-zinc-400 border-zinc-700 hover:text-white'
-                    }`}
+                      }`}
                   >
                     Right-to-Left (RTL)
                   </button>
@@ -481,6 +488,15 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
           initialContent={activeSongParsed.rawText}
           onClose={() => setShowEditModal(false)}
           onSave={onSaveSongFile}
+        />
+      )}
+
+      {/* PDF Two-Column Print Renderer Modal */}
+      {showPdfModal && activeSongParsed && (
+        <SongPdfRenderer
+          song={activeSongParsed}
+          isOpen={showPdfModal}
+          onClose={() => setShowPdfModal(false)}
         />
       )}
     </div>
