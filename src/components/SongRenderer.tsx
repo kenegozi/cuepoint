@@ -1,5 +1,6 @@
 import React from 'react';
 import { SongParsed } from '../types';
+import { ChordText } from './ChordText';
 
 interface SongRendererProps {
   song: SongParsed;
@@ -146,7 +147,7 @@ export const SongRenderer: React.FC<SongRendererProps> = ({
                             className="font-bold text-amber-400 font-mono h-[1.3em] leading-none select-none text-left"
                             style={{ fontSize: 'calc(var(--lyrics-font-size) * 0.85)' }}
                           >
-                            {item.chord || '\u00A0'}
+                            <ChordText chord={item.chord} />
                           </span>
                         )}
                         <span className="text-zinc-100 font-medium leading-normal">

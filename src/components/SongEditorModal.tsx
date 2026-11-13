@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { parseChordPro } from '../utils/chordpro';
+import { ChordText } from './ChordText';
 import { X, Save, Eye, Edit3, AlertCircle } from 'lucide-react';
 
 interface SongEditorModalProps {
@@ -205,7 +206,7 @@ export const SongEditorModal: React.FC<SongEditorModalProps> = ({
                                   {line.items.map((item, iIdx) => (
                                     <span key={iIdx} className="inline-flex flex-col mx-0.5">
                                       <span className="text-[11px] font-mono font-bold text-amber-400 leading-none h-4">
-                                        {item.chord || '\u00A0'}
+                                        <ChordText chord={item.chord} />
                                       </span>
                                       <span className="text-sm font-sans text-zinc-200 whitespace-pre leading-normal">
                                         {item.lyric || (item.chord ? '\u00A0' : '')}
