@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { SetData, SetSong, SongParsed, TextDirection } from '../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { SetData, SetSong, SongParsed, TextDirection, StageId, AVAILABLE_STAGES } from '../types';
 import { 
   Play, 
   ChevronUp, 
@@ -11,7 +11,8 @@ import {
   Settings, 
   FileText,
   AlertCircle,
-  Edit3
+  Edit3,
+  Tv
 } from 'lucide-react';
 import { SongEditorModal } from './SongEditorModal';
 
@@ -27,7 +28,7 @@ interface ControllerWindowProps {
   onSaveSet: () => void;
   onOpenFolderPicker: () => void;
   onOpenSettings: () => void;
-  onOpenViewerWindow: () => void;
+  onOpenViewerWindow: (stageId: StageId) => void;
   isSaving: boolean;
   statusMessage?: string;
   errorMessage?: string;
@@ -53,9 +54,26 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
   const isRTL = controllerDirection === 'rtl';
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showStageMenu, setShowStageMenu] = useState(false);
+  const stageMenuRef = useRef<HTMLDivElement>(null);
   const [newSongId, setNewSongId] = useState('');
   const [newSongTitle, setNewSongTitle] = useState('');
   const [addError, setAddError] = useState('');
+
+  // Close stage dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (stageMenuRef.current && !stageMenuRef.current.contains(event.target as Node)) {
+        setShowStageMenu(false);
+      }
+    };
+    if (showStageMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showStageMenu]);
 
   const moveSong = (index: number, direction: 'up' | 'down') => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -116,13 +134,55 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
             <span>Switch Folder</span>
           </button>
 
-          <button
-            onClick={onOpenViewerWindow}
-            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg flex items-center gap-1.5 transition shadow"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            <span>Open Stage Viewer</span>
-          </button>
+          {/* Multi-stage launcher button & dropdown */}
+          <div className="relative" ref={stageMenuRef}>
+            <div className="inline-flex rounded-lg shadow">
+              <button
+                onClick={() => onOpenViewerWindow('stage-1')}
+                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-l-lg flex items-center gap-1.5 transition"
+                title="Open Stage 1 (Default)"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Stage 1</span>
+              </button>
+              <button
+                onClick={() => setShowStageMenu((prev) => !prev)}
+                className="px-2 py-1.5 bg-amber-600 hover:bg-amber-500 text-black border-l border-amber-700/30 text-xs font-bold rounded-r-lg flex items-center transition"
+                title="Select stage to open"
+              >
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showStageMenu ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+
+            {showStageMenu && (
+              <div
+                className={`absolute top-full mt-1.5 w-52 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl py-1 z-50 ${
+                  isRTL ? 'left-0' : 'right-0'
+                }`}
+              >
+                <div className="px-3 py-1.5 text-[11px] font-bold text-zinc-400 uppercase tracking-wider border-b border-zinc-800 flex items-center gap-1.5">
+                  <Tv className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Open Stage Viewers</span>
+                </div>
+                {AVAILABLE_STAGES.map((stage) => (
+                  <button
+                    key={stage.id}
+                    onClick={() => {
+                      onOpenViewerWindow(stage.id);
+                      setShowStageMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-800 hover:text-white flex items-center justify-between transition group"
+                  >
+                    <div>
+                      <span className="font-semibold text-amber-400">{stage.label}</span>
+                      <p className="text-[10px] text-zinc-500 group-hover:text-zinc-400">{stage.description}</p>
+                    </div>
+                    <ExternalLink className="w-3 h-3 text-zinc-500 group-hover:text-zinc-300" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <button
             onClick={onSaveSet}

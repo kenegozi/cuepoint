@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { SetData, SetSong, SongParsed, SyncMessage, TextDirection } from './types';
+import { SetData, SetSong, SongParsed, SyncMessage, TextDirection, StageId, DEFAULT_STAGE_ID } from './types';
 import { ControllerWindow } from './components/ControllerWindow';
 import { ViewerWindow } from './components/ViewerWindow';
 import { SettingsModal } from './components/SettingsModal';
@@ -13,7 +13,28 @@ import { FolderPlus } from 'lucide-react';
 export function App() {
   // Check if current tab is explicitly opened as a viewer
   const [isViewerMode] = useState<boolean>(() => {
-    return window.location.search.includes('mode=viewer') || window.location.hash === '#viewer';
+    return (
+      window.location.search.includes('mode=viewer') ||
+      window.location.search.includes('stage=') ||
+      window.location.hash.startsWith('#viewer')
+    );
+  });
+
+  // Determine stageId from URL (?stage=stage-2 or #viewer:stage-2 or #viewer/stage-2)
+  const [currentStageId] = useState<StageId>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stageParam = params.get('stage');
+    if (stageParam === 'stage-1' || stageParam === 'stage-2' || stageParam === 'stage-3') {
+      return stageParam;
+    }
+
+    const hash = window.location.hash;
+    const match = hash.match(/#(?:viewer[:/])?(stage-[123])/);
+    if (match && (match[1] === 'stage-1' || match[1] === 'stage-2' || match[1] === 'stage-3')) {
+      return match[1];
+    }
+
+    return DEFAULT_STAGE_ID;
   });
 
   const [activeSet, setActiveSet] = useState<SetData>(DEMO_SET);
@@ -163,10 +184,10 @@ export function App() {
     });
   };
 
-  // Open Stage Viewer in a separate clean window
-  const handleOpenViewerWindow = () => {
-    const url = `${window.location.origin}${window.location.pathname}?mode=viewer`;
-    window.open(url, 'CuePointViewer', 'width=1024,height=768');
+  // Open Stage Viewer in a separate clean window with specific stage target
+  const handleOpenViewerWindow = (stageId: StageId = DEFAULT_STAGE_ID) => {
+    const url = `${window.location.origin}${window.location.pathname}?mode=viewer&stage=${stageId}`;
+    window.open(url, `CuePointViewer_${stageId}`, 'width=1024,height=768');
   };
 
   // Reorder songs in setlist
@@ -416,7 +437,7 @@ export function App() {
 
   // If this window is dedicated to the stage display
   if (isViewerMode) {
-    return <ViewerWindow currentSong={activeSongParsed} />;
+    return <ViewerWindow currentSong={activeSongParsed} stageId={currentStageId} />;
   }
 
   // Otherwise Controller Window

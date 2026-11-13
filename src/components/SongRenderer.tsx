@@ -6,6 +6,7 @@ interface SongRendererProps {
   song: SongParsed;
   fontSize: number; // in pixels
   showChords: boolean;
+  showComments?: boolean;
   directionOverride?: 'ltr' | 'rtl' | 'auto';
 }
 
@@ -13,6 +14,7 @@ export const SongRenderer: React.FC<SongRendererProps> = ({
   song,
   fontSize,
   showChords,
+  showComments = true,
   directionOverride = 'auto',
 }) => {
   const resolvedDirection: 'ltr' | 'rtl' =
@@ -121,6 +123,7 @@ export const SongRenderer: React.FC<SongRendererProps> = ({
             <div className="space-y-2">
               {section.lines.map((line, lIdx) => {
                 if (line.comment) {
+                  if (!showComments) return null;
                   return (
                     <div
                       key={lIdx}

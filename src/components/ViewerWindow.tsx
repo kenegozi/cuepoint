@@ -1,23 +1,49 @@
-import React, { useState } from 'react';
-import { SongParsed, TextDirection } from '../types';
+import React, { useState, useEffect } from 'react';
+import {
+  SongParsed,
+  StageId,
+  DEFAULT_STAGE_ID,
+  StageViewerSettings,
+  loadStageSettings,
+  saveStageSettings,
+} from '../types';
 import { SongRenderer } from './SongRenderer';
-import { ZoomIn, ZoomOut, Music, AlignLeft, Maximize, Minimize } from 'lucide-react';
+import { ZoomIn, ZoomOut, Music, AlignLeft, Maximize, Minimize, MessageSquare } from 'lucide-react';
 
 interface ViewerWindowProps {
   currentSong: SongParsed | null;
-  initialFontSize?: number;
-  initialShowChords?: boolean;
+  stageId?: StageId;
 }
 
 export const ViewerWindow: React.FC<ViewerWindowProps> = ({
   currentSong,
-  initialFontSize = 26,
-  initialShowChords = true,
+  stageId = DEFAULT_STAGE_ID,
 }) => {
-  const [fontSize, setFontSize] = useState<number>(initialFontSize);
-  const [showChords, setShowChords] = useState<boolean>(initialShowChords);
-  const [directionOverride, setDirectionOverride] = useState<TextDirection>('auto');
+  const [settings, setSettings] = useState<StageViewerSettings>(() => loadStageSettings(stageId));
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // When stageId changes, re-read settings for that stage
+  useEffect(() => {
+    setSettings(loadStageSettings(stageId));
+  }, [stageId]);
+
+  const updateSetting = <K extends keyof StageViewerSettings>(
+    key: K,
+    value: StageViewerSettings[K] | ((prev: StageViewerSettings[K]) => StageViewerSettings[K])
+  ) => {
+    setSettings((prev) => {
+      const resolvedValue =
+        typeof value === 'function'
+          ? (value as (prev: StageViewerSettings[K]) => StageViewerSettings[K])(prev[key])
+          : value;
+      const updated = {
+        ...prev,
+        [key]: resolvedValue,
+      };
+      saveStageSettings(stageId, updated);
+      return updated;
+    });
+  };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -27,6 +53,8 @@ export const ViewerWindow: React.FC<ViewerWindowProps> = ({
     }
   };
 
+  const stageDisplayLabel = stageId.replace('stage-', 'STAGE ');
+
   return (
     <div className="min-h-screen bg-black text-zinc-100 flex flex-col relative select-none">
       {/* Floating or Top Subtle Controls Bar */}
@@ -34,35 +62,37 @@ export const ViewerWindow: React.FC<ViewerWindowProps> = ({
         <div className="flex items-center gap-3">
           <span className="font-black text-amber-500 tracking-wider text-sm uppercase">CUEPOINT</span>
           <span className="text-zinc-600">|</span>
-          <span className="text-xs text-zinc-400 font-mono">STAGE VIEWER</span>
+          <span className="text-xs bg-zinc-800 text-amber-400 font-bold px-2 py-0.5 rounded border border-zinc-700 font-mono uppercase tracking-wider">
+            {stageDisplayLabel}
+          </span>
         </div>
 
-        {/* Font size, display mode, and RTL/LTR controls */}
+        {/* Font size, display mode, comments, and RTL/LTR controls */}
         <div className="flex items-center gap-2">
           {/* Direction Override Control */}
           <div className="flex items-center bg-zinc-900 rounded-lg p-1 border border-zinc-800">
             <button
-              onClick={() => setDirectionOverride('auto')}
+              onClick={() => updateSetting('directionOverride', 'auto')}
               className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${
-                directionOverride === 'auto' ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:text-white'
+                settings.directionOverride === 'auto' ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:text-white'
               }`}
               title="Auto direction (from song)"
             >
               Auto
             </button>
             <button
-              onClick={() => setDirectionOverride('ltr')}
+              onClick={() => updateSetting('directionOverride', 'ltr')}
               className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${
-                directionOverride === 'ltr' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+                settings.directionOverride === 'ltr' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
               }`}
               title="Force Left-to-Right"
             >
               LTR
             </button>
             <button
-              onClick={() => setDirectionOverride('rtl')}
+              onClick={() => updateSetting('directionOverride', 'rtl')}
               className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${
-                directionOverride === 'rtl' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+                settings.directionOverride === 'rtl' ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
               }`}
               title="Force Right-to-Left"
             >
@@ -70,11 +100,12 @@ export const ViewerWindow: React.FC<ViewerWindowProps> = ({
             </button>
           </div>
 
+          {/* Chords Toggle */}
           <div className="flex items-center bg-zinc-900 rounded-lg p-1 border border-zinc-800">
             <button
-              onClick={() => setShowChords(false)}
+              onClick={() => updateSetting('showChords', false)}
               className={`px-2.5 py-1 text-xs font-semibold rounded flex items-center gap-1 transition-colors ${
-                !showChords ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+                !settings.showChords ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
               }`}
               title="Lyrics only"
             >
@@ -82,9 +113,9 @@ export const ViewerWindow: React.FC<ViewerWindowProps> = ({
               <span>Lyrics</span>
             </button>
             <button
-              onClick={() => setShowChords(true)}
+              onClick={() => updateSetting('showChords', true)}
               className={`px-2.5 py-1 text-xs font-semibold rounded flex items-center gap-1 transition-colors ${
-                showChords ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+                settings.showChords ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
               }`}
               title="Lyrics and Chords"
             >
@@ -93,17 +124,32 @@ export const ViewerWindow: React.FC<ViewerWindowProps> = ({
             </button>
           </div>
 
+          {/* Comments Toggle */}
           <div className="flex items-center bg-zinc-900 rounded-lg p-1 border border-zinc-800">
             <button
-              onClick={() => setFontSize((f) => Math.max(16, f - 2))}
+              onClick={() => updateSetting('showComments', (prev) => !prev)}
+              className={`px-2.5 py-1 text-xs font-semibold rounded flex items-center gap-1.5 transition-colors ${
+                settings.showComments ? 'bg-amber-500 text-black' : 'text-zinc-400 hover:text-white'
+              }`}
+              title="Toggle cues/comments"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Cues</span>
+            </button>
+          </div>
+
+          {/* Font Size Zoom Control */}
+          <div className="flex items-center bg-zinc-900 rounded-lg p-1 border border-zinc-800">
+            <button
+              onClick={() => updateSetting('fontSize', (f) => Math.max(16, f - 2))}
               className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition"
               title="Decrease font size"
             >
               <ZoomOut className="w-4 h-4" />
             </button>
-            <span className="text-xs font-mono font-bold px-2 text-zinc-300 w-8 text-center">{fontSize}</span>
+            <span className="text-xs font-mono font-bold px-2 text-zinc-300 w-8 text-center">{settings.fontSize}</span>
             <button
-              onClick={() => setFontSize((f) => Math.min(60, f + 2))}
+              onClick={() => updateSetting('fontSize', (f) => Math.min(60, f + 2))}
               className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition"
               title="Increase font size"
             >
@@ -126,9 +172,10 @@ export const ViewerWindow: React.FC<ViewerWindowProps> = ({
         {currentSong ? (
           <SongRenderer
             song={currentSong}
-            fontSize={fontSize}
-            showChords={showChords}
-            directionOverride={directionOverride}
+            fontSize={settings.fontSize}
+            showChords={settings.showChords}
+            showComments={settings.showComments}
+            directionOverride={settings.directionOverride}
           />
         ) : (
           <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
