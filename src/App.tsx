@@ -209,6 +209,57 @@ export function App() {
     handleSelectSong(updatedSongs.length - 1);
   };
 
+  // Save edited song file (Drive + Local Cache + Viewer update)
+  const handleSaveSongFile = async (fileName: string, content: string) => {
+    // 1. Save to local cache
+    await storageService.saveSongFile(fileName, content);
+
+    // 2. If folderId is connected, save to Google Drive
+    if (folderId) {
+      try {
+        await googleDriveService.saveFileToFolder(folderId, fileName, content);
+      } catch (err: any) {
+        setErrorMessage(`Saved locally, but failed to write to Google Drive: ${err.message}`);
+      }
+    }
+
+    // 3. Update active song if this is the active song
+    const songId = fileName.replace(/\.chordpro$/, '');
+    const currentActiveSong = activeSet.songs[activeSongIndex];
+
+    if (currentActiveSong && currentActiveSong.fileName === fileName) {
+      const parsed = parseChordPro(content, songId);
+      setActiveSongParsed(parsed);
+
+      // If title changed in the chordpro file, update set metadata
+      if (parsed.title && parsed.title !== currentActiveSong.title) {
+        const updatedSongs = [...activeSet.songs];
+        updatedSongs[activeSongIndex] = { ...currentActiveSong, title: parsed.title };
+        const updatedSet = { ...activeSet, songs: updatedSongs };
+        setActiveSet(updatedSet);
+        await storageService.saveSet(updatedSet);
+        if (folderId) {
+          const setFileName = `${activeSet.id}.cuepoint.json`;
+          googleDriveService
+            .saveFileToFolder(folderId, setFileName, JSON.stringify(updatedSet, null, 2), 'application/json')
+            .catch(console.error);
+        }
+      }
+
+      // Broadcast update to viewer windows
+      syncService.broadcast({
+        type: 'SELECT_SONG',
+        songIndex: activeSongIndex,
+        songId: fileName,
+        song: parsed,
+        direction: parsed.direction,
+      });
+    }
+
+    setStatusMessage(`Saved "${fileName}" successfully.`);
+    setTimeout(() => setStatusMessage(''), 3000);
+  };
+
   // Save full set
   const handleSaveSet = async () => {
     setIsSaving(true);
@@ -379,6 +430,7 @@ export function App() {
         onSelectSong={handleSelectSong}
         onReorderSongs={handleReorderSongs}
         onAddSong={handleAddSong}
+        onSaveSongFile={handleSaveSongFile}
         onSaveSet={handleSaveSet}
         onOpenFolderPicker={handleOpenFolderPicker}
         onOpenSettings={() => setIsSettingsOpen(true)}

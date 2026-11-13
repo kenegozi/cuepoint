@@ -10,8 +10,10 @@ import {
   ExternalLink, 
   Settings, 
   FileText,
-  AlertCircle
+  AlertCircle,
+  Edit3
 } from 'lucide-react';
+import { SongEditorModal } from './SongEditorModal';
 
 interface ControllerWindowProps {
   set: SetData;
@@ -21,6 +23,7 @@ interface ControllerWindowProps {
   onSelectSong: (index: number) => void;
   onReorderSongs: (reordered: SetSong[]) => void;
   onAddSong: (songId: string, title: string) => void;
+  onSaveSongFile: (fileName: string, content: string) => Promise<void>;
   onSaveSet: () => void;
   onOpenFolderPicker: () => void;
   onOpenSettings: () => void;
@@ -38,6 +41,7 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
   onSelectSong,
   onReorderSongs,
   onAddSong,
+  onSaveSongFile,
   onSaveSet,
   onOpenFolderPicker,
   onOpenSettings,
@@ -48,6 +52,7 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
 }) => {
   const isRTL = controllerDirection === 'rtl';
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [newSongId, setNewSongId] = useState('');
   const [newSongTitle, setNewSongTitle] = useState('');
   const [addError, setAddError] = useState('');
@@ -280,7 +285,17 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
                     <FileText className="w-3.5 h-3.5 text-zinc-500" />
                     {set.songs[activeSongIndex]?.fileName}
                   </span>
-                  <span>{activeSongParsed.sections.length} sections parsed</span>
+                  <div className="flex items-center gap-3">
+                    <span>{activeSongParsed.sections.length} sections parsed</span>
+                    <button
+                      onClick={() => setShowEditModal(true)}
+                      className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded font-sans font-semibold text-xs flex items-center gap-1.5 transition"
+                      title="Edit ChordPro file"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Edit</span>
+                    </button>
+                  </div>
                 </div>
                 <pre
                   dir={activeSongParsed.direction === 'rtl' ? 'rtl' : 'ltr'}
@@ -366,6 +381,17 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Edit Song Modal */}
+      {showEditModal && activeSongParsed && (
+        <SongEditorModal
+          isOpen={showEditModal}
+          fileName={set.songs[activeSongIndex]?.fileName || `${activeSongParsed.id}.chordpro`}
+          initialContent={activeSongParsed.rawText}
+          onClose={() => setShowEditModal(false)}
+          onSave={onSaveSongFile}
+        />
       )}
     </div>
   );
