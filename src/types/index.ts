@@ -12,6 +12,8 @@ export interface StageViewerSettings {
   showChords: boolean;
   showComments: boolean;
   fontSize: number;
+  chordScale: number; // relative multiplier for chord size, e.g. 0.85
+  slashChordScale: number; // relative multiplier for slash/bass note size, e.g. 0.8
   directionOverride: TextDirection;
 }
 
@@ -19,6 +21,8 @@ export const DEFAULT_STAGE_VIEWER_SETTINGS: StageViewerSettings = {
   showChords: true,
   showComments: true,
   fontSize: 26,
+  chordScale: 0.85,
+  slashChordScale: 0.8,
   directionOverride: 'auto',
 };
 

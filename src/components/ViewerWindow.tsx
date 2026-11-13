@@ -139,23 +139,88 @@ export const ViewerWindow: React.FC<ViewerWindowProps> = ({
           </div>
 
           {/* Font Size Zoom Control */}
-          <div className="flex items-center bg-zinc-900 rounded-lg p-1 border border-zinc-800">
+          <div className="flex items-center bg-zinc-900 rounded-lg p-1 border border-zinc-800" title="Lyrics font size">
+            <span className="text-[10px] font-bold text-zinc-400 px-1 uppercase">Txt</span>
             <button
               onClick={() => updateSetting('fontSize', (f) => Math.max(16, f - 2))}
               className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition"
-              title="Decrease font size"
+              title="Decrease lyrics font size"
             >
               <ZoomOut className="w-4 h-4" />
             </button>
-            <span className="text-xs font-mono font-bold px-2 text-zinc-300 w-8 text-center">{settings.fontSize}</span>
+            <span className="text-xs font-mono font-bold px-1 text-zinc-300 w-7 text-center">{settings.fontSize}</span>
             <button
               onClick={() => updateSetting('fontSize', (f) => Math.min(60, f + 2))}
               className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition"
-              title="Increase font size"
+              title="Increase lyrics font size"
             >
               <ZoomIn className="w-4 h-4" />
             </button>
           </div>
+
+          {/* Chord Scale Size Control (visible when showChords is enabled) */}
+          {settings.showChords && (
+            <>
+              <div className="flex items-center bg-zinc-900 rounded-lg p-1 border border-zinc-800" title="Chord font size ratio">
+                <span className="text-[10px] font-bold text-amber-400 px-1 uppercase">Chd</span>
+                <button
+                  onClick={() =>
+                    updateSetting('chordScale', (scale = 0.85) =>
+                      Math.max(0.5, Math.round((scale - 0.05) * 100) / 100)
+                    )
+                  }
+                  className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition"
+                  title="Decrease chord size"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="text-xs font-mono font-bold px-1 text-amber-400 w-11 text-center">
+                  {Math.round((settings.chordScale ?? 0.85) * 100)}%
+                </span>
+                <button
+                  onClick={() =>
+                    updateSetting('chordScale', (scale = 0.85) =>
+                      Math.min(1.5, Math.round((scale + 0.05) * 100) / 100)
+                    )
+                  }
+                  className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition"
+                  title="Increase chord size"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Slash Chord / Bass Note Scale Size Control */}
+              <div className="flex items-center bg-zinc-900 rounded-lg p-1 border border-zinc-800" title="Slash chord / bass note size ratio">
+                <span className="text-[10px] font-bold text-amber-300 px-1 uppercase">/Bass</span>
+                <button
+                  onClick={() =>
+                    updateSetting('slashChordScale', (scale = 0.8) =>
+                      Math.max(0.4, Math.round((scale - 0.05) * 100) / 100)
+                    )
+                  }
+                  className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition"
+                  title="Decrease slash chord bass note size"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="text-xs font-mono font-bold px-1 text-amber-300 w-11 text-center">
+                  {Math.round((settings.slashChordScale ?? 0.8) * 100)}%
+                </span>
+                <button
+                  onClick={() =>
+                    updateSetting('slashChordScale', (scale = 0.8) =>
+                      Math.min(1.2, Math.round((scale + 0.05) * 100) / 100)
+                    )
+                  }
+                  className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition"
+                  title="Increase slash chord bass note size"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+              </div>
+            </>
+          )}
 
           <button
             onClick={toggleFullscreen}
@@ -173,6 +238,8 @@ export const ViewerWindow: React.FC<ViewerWindowProps> = ({
           <SongRenderer
             song={currentSong}
             fontSize={settings.fontSize}
+            chordScale={settings.chordScale ?? 0.85}
+            slashChordScale={settings.slashChordScale ?? 0.8}
             showChords={settings.showChords}
             showComments={settings.showComments}
             directionOverride={settings.directionOverride}

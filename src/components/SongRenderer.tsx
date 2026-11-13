@@ -5,6 +5,8 @@ import { ChordText } from './ChordText';
 interface SongRendererProps {
   song: SongParsed;
   fontSize: number; // in pixels
+  chordScale?: number; // relative to fontSize, default 0.85
+  slashChordScale?: number; // relative to chord font size, default 0.8
   showChords: boolean;
   showComments?: boolean;
   directionOverride?: 'ltr' | 'rtl' | 'auto';
@@ -13,6 +15,8 @@ interface SongRendererProps {
 export const SongRenderer: React.FC<SongRendererProps> = ({
   song,
   fontSize,
+  chordScale = 0.85,
+  slashChordScale = 0.8,
   showChords,
   showComments = true,
   directionOverride = 'auto',
@@ -30,6 +34,8 @@ export const SongRenderer: React.FC<SongRendererProps> = ({
       style={{
         // Define root font size and calculated relatives
         ['--lyrics-font-size' as any]: `${fontSize}px`,
+        ['--chord-font-size' as any]: `calc(var(--lyrics-font-size) * ${chordScale})`,
+        ['--slash-chord-font-size' as any]: `calc(var(--chord-font-size) * ${slashChordScale})`,
         fontSize: 'var(--lyrics-font-size)',
         lineHeight: 1.5,
       }}
@@ -148,7 +154,7 @@ export const SongRenderer: React.FC<SongRendererProps> = ({
                           <span
                             dir="ltr"
                             className="font-bold text-amber-400 font-mono h-[1.3em] leading-none select-none text-left"
-                            style={{ fontSize: 'calc(var(--lyrics-font-size) * 0.85)' }}
+                            style={{ fontSize: 'var(--chord-font-size)' }}
                           >
                             <ChordText chord={item.chord} />
                           </span>

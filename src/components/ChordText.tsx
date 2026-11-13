@@ -23,7 +23,7 @@ export const ChordText: React.FC<ChordTextProps> = ({ chord, className, style })
     return (
       <span className={className} style={style}>
         {mainChord}
-        <span style={{ fontSize: '0.65em', verticalAlign: 'sub' }}>
+        <span style={{ fontSize: 'var(--slash-chord-font-size, 0.8em)', verticalAlign: 'sub' }}>
           {bassPart}
         </span>
       </span>
