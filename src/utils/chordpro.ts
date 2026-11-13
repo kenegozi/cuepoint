@@ -87,7 +87,7 @@ export function parseChordPro(rawText: string, id: string): SongParsed {
           if (currentSection.lines.length > 0) {
             parsed.sections.push(currentSection);
           }
-          currentSection = { type: 'chorus', title: 'Chorus', lines: [] };
+          currentSection = { type: 'chorus', title: val || 'Chorus', lines: [] };
           break;
         case 'end_of_chorus':
         case 'eoc':
@@ -101,7 +101,7 @@ export function parseChordPro(rawText: string, id: string): SongParsed {
           if (currentSection.lines.length > 0) {
             parsed.sections.push(currentSection);
           }
-          currentSection = { type: 'verse', title: 'Verse', lines: [] };
+          currentSection = { type: 'verse', title: val || 'Verse', lines: [] };
           break;
         case 'end_of_verse':
         case 'eov':
@@ -115,7 +115,7 @@ export function parseChordPro(rawText: string, id: string): SongParsed {
           if (currentSection.lines.length > 0) {
             parsed.sections.push(currentSection);
           }
-          currentSection = { type: 'bridge', title: 'Bridge', lines: [] };
+          currentSection = { type: 'bridge', title: val || 'Bridge', lines: [] };
           break;
         case 'end_of_bridge':
         case 'eob':
