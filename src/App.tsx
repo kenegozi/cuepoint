@@ -198,9 +198,10 @@ export function App() {
   };
 
   // Add new song to set
-  const handleAddSong = async (songId: string, title: string) => {
+  const handleAddSong = async (songId: string, title: string, direction: 'ltr' | 'rtl' = 'ltr') => {
     const fileName = `${songId}.chordpro`;
-    const initialContent = `{title: ${title}}\n\n[C]Start typing lyrics and chords\n`;
+    const metaDirectionLine = direction === 'rtl' ? '{meta: direction rtl}\n' : '';
+    const initialContent = `{title: ${title}}\n${metaDirectionLine}\n[C]Start typing lyrics and chords\n`;
 
     // 1. Save locally in cache
     await storageService.saveSongFile(fileName, initialContent);

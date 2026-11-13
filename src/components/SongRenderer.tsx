@@ -91,12 +91,6 @@ export const SongRenderer: React.FC<SongRendererProps> = ({
               CAPO: {song.capo}
             </span>
           )}
-          <span
-            className="bg-zinc-900 text-zinc-400 border border-zinc-800 px-2 py-0.5 rounded text-xs font-mono uppercase"
-            style={{ fontSize: 'calc(var(--lyrics-font-size) * 0.55)' }}
-          >
-            {resolvedDirection.toUpperCase()}
-          </span>
         </div>
       </header>
 

@@ -23,7 +23,7 @@ interface ControllerWindowProps {
   controllerDirection?: TextDirection;
   onSelectSong: (index: number) => void;
   onReorderSongs: (reordered: SetSong[]) => void;
-  onAddSong: (songId: string, title: string) => void;
+  onAddSong: (songId: string, title: string, direction?: 'ltr' | 'rtl') => void;
   onSaveSongFile: (fileName: string, content: string) => Promise<void>;
   onSaveSet: () => void;
   onOpenFolderPicker: () => void;
@@ -58,6 +58,7 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
   const stageMenuRef = useRef<HTMLDivElement>(null);
   const [newSongId, setNewSongId] = useState('');
   const [newSongTitle, setNewSongTitle] = useState('');
+  const [newSongDirection, setNewSongDirection] = useState<'ltr' | 'rtl'>('ltr');
   const [addError, setAddError] = useState('');
 
   // Close stage dropdown when clicking outside
@@ -105,10 +106,11 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
       return;
     }
 
-    onAddSong(cleanId, cleanTitle);
+    onAddSong(cleanId, cleanTitle, newSongDirection);
     setShowAddModal(false);
     setNewSongId('');
     setNewSongTitle('');
+    setNewSongDirection('ltr');
     setAddError('');
   };
 
@@ -416,6 +418,34 @@ export const ControllerWindow: React.FC<ControllerWindowProps> = ({
                   required
                   className="w-full bg-zinc-950 border border-zinc-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
                 />
+              </div>
+
+              <div>
+                <label className="text-xs font-mono text-zinc-300 block mb-1">Text Direction</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewSongDirection('ltr')}
+                    className={`py-2 px-3 text-xs font-semibold rounded border transition text-center ${
+                      newSongDirection === 'ltr'
+                        ? 'bg-amber-500 text-black border-amber-500'
+                        : 'bg-zinc-950 text-zinc-400 border-zinc-700 hover:text-white'
+                    }`}
+                  >
+                    Left-to-Right (LTR)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewSongDirection('rtl')}
+                    className={`py-2 px-3 text-xs font-semibold rounded border transition text-center ${
+                      newSongDirection === 'rtl'
+                        ? 'bg-amber-500 text-black border-amber-500'
+                        : 'bg-zinc-950 text-zinc-400 border-zinc-700 hover:text-white'
+                    }`}
+                  >
+                    Right-to-Left (RTL)
+                  </button>
+                </div>
               </div>
 
               {addError && <p className="text-xs text-rose-400">{addError}</p>}
